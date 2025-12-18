@@ -30,6 +30,7 @@ export const useRouter = <T extends RouterInstance<AnyFunction>, S>(router: T, s
   // useSyncExternalStore를 사용하여 외부 스토어(라우터) 구독
   return useSyncExternalStore(
     router.subscribe, // 라우터 상태 변경 구독
-    () => shallowSelector(router), // 현재 라우터 상태 반환 (클라이언트/서버 동일)
+    () => shallowSelector(router), // 클라이언트: 현재 라우터 상태 반환
+    () => shallowSelector(router), // 서버: 동일하게 처리
   );
 };

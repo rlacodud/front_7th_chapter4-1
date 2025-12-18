@@ -34,6 +34,7 @@ export const useStore = <T, S = T>(store: Store<T>, selector: (state: T) => S = 
   // useSyncExternalStore를 사용하여 외부 스토어 구독
   return useSyncExternalStore(
     store.subscribe, // 스토어 상태 변경 구독
-    () => shallowSelector(store.getState()), // 현재 스토어 상태 반환 (클라이언트/서버 동일)
+    () => shallowSelector(store.getState()), // 클라이언트: 현재 스토어 상태 반환
+    () => shallowSelector(store.getState()), // 서버: 동일하게 처리
   );
 };

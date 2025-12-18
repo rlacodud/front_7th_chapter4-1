@@ -22,6 +22,7 @@ export const useStorage = <T>(storage: Storage<T>) => {
   // useSyncExternalStore를 사용하여 외부 스토어(스토리지) 구독
   return useSyncExternalStore(
     storage.subscribe, // 스토리지 값 변경 구독
-    storage.get, // 현재 스토리지 값 반환 (클라이언트/서버 동일)
+    storage.get, // 클라이언트: 현재 스토리지 값 반환
+    storage.get, // 서버: 동일하게 처리
   );
 };
