@@ -1,18 +1,55 @@
-import { renderToString } from "react-dom/server";
-import { createElement } from "react";
-import fs from "fs";
+/**
+ * 정적 사이트 생성 (SSG) 스크립트
+ *
+ * 모든 페이지를 미리 렌더링하여 정적 HTML 파일로 생성함
+ * - 404 페이지
+ * - 홈 페이지
+ * - 각 상품 상세 페이지
+ */
 
-async function generateStaticSite() {
-  // HTML 템플릿 읽기
-  const template = fs.readFileSync("../../dist/react/index.html", "utf-8");
+import fs from "node:fs";
+import path from "node:path";
+import { DIST_SSG_DIR } from "./src/constants.ts";
+import { createViteServer, generatePage } from "./src/server/utils/ssrUtils.ts";
 
-  // 어플리케이션 렌더링하기
-  const appHtml = renderToString(createElement("div", null, "안녕하세요"));
+/**
+ * 정적 페이지 생성 함수
+ */
+const generateStaticPages = async () => {
+  // Vite 서버 생성 (SSR 모듈 로드를 위해 필요)
+  const viteServer = await createViteServer();
 
-  // 결과 HTML 생성하기
-  const result = template.replace("<!--app-html-->", appHtml);
-  fs.writeFileSync("../../dist/react/index.html", result);
-}
+  try {
+    // MSW 서버 시작 (SSR 렌더링 시 API 모킹 필요)
+    const { server: mswServer } = await viteServer.ssrLoadModule("./src/mocks/nodeServer.ts");
+    mswServer.listen({ onUnhandledRequest: "bypass" });
 
-// 실행
-generateStaticSite();
+    // SSR 렌더 함수와 HTML 템플릿 로드
+    const { render } = await viteServer.ssrLoadModule("./src/main-server.tsx");
+    const template = fs.readFileSync(path.join(DIST_SSG_DIR, "index.html"), "utf-8");
+
+    // 404 페이지 생성
+    await generatePage("/404.html", render, template, DIST_SSG_DIR);
+    // 홈 페이지 생성
+    await generatePage("/", render, template, DIST_SSG_DIR);
+
+    // 상품 목록 가져오기
+    const { getProducts } = await viteServer.ssrLoadModule("./src/api/productApi.ts");
+    const { products } = await getProducts();
+
+    // 각 상품 상세 페이지 생성 (병렬 처리)
+    const productTasks = products.map((product) =>
+      generatePage(`/product/${product.productId}/`, render, template, DIST_SSG_DIR),
+    );
+    await Promise.all(productTasks);
+
+    // MSW 서버 종료
+    mswServer.close();
+  } finally {
+    // Vite 서버 종료
+    viteServer.close();
+  }
+};
+
+// 정적 페이지 생성 실행
+generateStaticPages();

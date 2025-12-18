@@ -108,6 +108,7 @@ app.use("*all", async (req: Request, res: Response) => {
     // SSR 렌더링 실행
     const rendered = await render(pathname, query);
 
+    // 렌더링 결과 검증 (타입 안전성)
     if (typeof rendered.html !== "string") {
       console.error("rendered.html is not a string:", typeof rendered.html, rendered.html);
       throw new Error(`render returned non-string html: ${typeof rendered.html}`);
