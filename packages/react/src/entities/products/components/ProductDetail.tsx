@@ -11,13 +11,20 @@ export function ProductDetail(product: Readonly<Product>) {
   const router = useRouterContext();
   log(`ProductDetail: ${product.productId}`);
   const addToCart = useCartAddCommand();
-  const { productId, title, image, lprice, brand, category1, category2 } = product;
-  const [cartQuantity, setCartQuantity] = useState(1);
-
-  const description = "",
+  const {
+    productId,
+    title,
+    image,
+    lprice,
+    brand,
+    category1,
+    category2,
+    description = "",
     rating = 0,
     reviewCount = 0,
-    stock = 100;
+    stock = 100,
+  } = product;
+  const [cartQuantity, setCartQuantity] = useState(1);
 
   const price = Number(lprice);
 

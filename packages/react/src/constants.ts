@@ -4,9 +4,10 @@ export const isClient = typeof window !== "undefined";
 export const isServer = !isClient;
 
 // 애플리케이션 기본 설정
-// import.meta.env는 Vite가 제공하는 환경 변수 (Node.js 직접 실행 시에는 undefined)
+// Vite의 import.meta.env.BASE_URL을 직접 사용 (vite.config.ts의 base 설정과 항상 일치)
+// BASE_URL은 항상 /로 시작하고 /로 끝남 (예: "/front_7th_chapter4-1/react/" 또는 "/")
 export const BASE_URL =
-  typeof import.meta !== "undefined" && import.meta.env?.PROD ? "/front_7th_chapter4-1/react/" : "/";
+  typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/";
 
 // 빌드 디렉토리 경로 상수
 /**

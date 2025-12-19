@@ -108,11 +108,13 @@ export function getProduct(productId) {
   }
 
   // 상세 정보에 추가 데이터 포함
-  // description은 items.json에 없으면 생성하지 않음 (UI에서 선택적 표시)
+  // description은 원본 데이터에 있으면 사용, 없으면 제품명 기반으로 자동 생성
+  const description =
+    product.description ||
+    `${product.title}에 대한 상세 설명입니다. 브랜드의 우수한 품질을 자랑하는 상품으로, 고객 만족도가 높은 제품입니다.`;
   const detailProduct = {
     ...product,
-    // description은 원본 데이터에 있으면 사용, 없으면 undefined (UI에서 처리)
-    ...(product.description && { description: product.description }),
+    description,
     rating: Math.floor(Math.random() * 2) + 4, // 4~5점 랜덤
     reviewCount: Math.floor(Math.random() * 1000) + 50, // 50~1050개 랜덤
     stock: Math.floor(Math.random() * 100) + 10, // 10~110개 랜덤
