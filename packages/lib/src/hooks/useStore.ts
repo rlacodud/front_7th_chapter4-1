@@ -1,5 +1,5 @@
 import type { createStore } from "../createStore";
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, useRef } from "react";
 import { useShallowSelector } from "./useShallowSelector";
 
 /**
@@ -31,10 +31,19 @@ export const useStore = <T, S = T>(store: Store<T>, selector: (state: T) => S = 
   // 얕은 비교를 통해 불필요한 리렌더링 방지
   const shallowSelector = useShallowSelector(selector);
 
+  // getServerSnapshot을 useRef로 캐싱하여 무한 루프 방지
+  // React 19에서는 getServerSnapshot의 결과를 캐시해야 함
+  // shallowSelector는 useRef를 사용하므로 안정적인 함수
+  // getServerSnapshot은 항상 최신 스토어 상태를 반환하되, 함수 자체는 캐시
+  const getServerSnapshotRef = useRef<() => S>();
+  if (!getServerSnapshotRef.current) {
+    getServerSnapshotRef.current = () => shallowSelector(store.getState());
+  }
+
   // useSyncExternalStore를 사용하여 외부 스토어 구독
   return useSyncExternalStore(
     store.subscribe, // 스토어 상태 변경 구독
     () => shallowSelector(store.getState()), // 클라이언트: 현재 스토어 상태 반환
-    () => shallowSelector(store.getState()), // 서버: 동일하게 처리
+    getServerSnapshotRef.current, // 서버: 캐시된 함수 사용 (항상 최신 상태 반환)
   );
 };

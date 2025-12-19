@@ -11,7 +11,7 @@ export const useProductFilter = () => {
 
   useEffect(() => {
     loadProducts(true);
-  }, [searchQuery, limit, sort, category1, category2]);
+  }, [searchQuery, limit, sort, category1, category2, loadProducts]);
 
   return {
     searchQuery,

@@ -29,7 +29,7 @@ export function hydrateStoreFromSSR() {
           products: initialData.products ?? [],
           categories: initialData.categories ?? {},
           totalCount: initialData.totalCount ?? 0,
-          loading: false,
+          loading: false, // 하이드레이션 시 로딩 상태를 false로 설정
           error: null,
           status: "done",
         },
@@ -41,6 +41,11 @@ export function hydrateStoreFromSSR() {
       productStore.dispatch({
         type: PRODUCT_ACTIONS.SET_CURRENT_PRODUCT,
         payload: initialData.currentProduct,
+      });
+      // 상품 상세 페이지 하이드레이션 시 로딩 상태를 false로 설정
+      productStore.dispatch({
+        type: PRODUCT_ACTIONS.SET_LOADING,
+        payload: false,
       });
     }
 

@@ -70,12 +70,13 @@ export class Router {
       document.addEventListener("click", (e) => {
         const target = e.target;
         // data-link 속성을 가진 요소 또는 그 자식 요소인지 확인
-        if (!target?.closest("[data-link]")) {
+        const linkElement = target?.closest("[data-link]");
+        if (!linkElement) {
           return;
         }
         e.preventDefault(); // 기본 링크 동작 방지
-        // href 속성에서 URL 추출 (직접 클릭한 요소 또는 가장 가까운 data-link 요소)
-        const url = target.getAttribute("href") ?? target.closest("[data-link]")?.getAttribute("href");
+        // href 속성에서 URL 추출 (가장 가까운 data-link 요소에서 추출)
+        const url = linkElement.getAttribute("href");
         if (url) {
           this.push(url); // 라우터를 통해 네비게이션
         }

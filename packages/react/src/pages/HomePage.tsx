@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { ProductList, SearchBar, useProductStoreContext } from "../entities";
 import { PageWrapper } from "./PageWrapper";
 import { withServerSideProps } from "../utils";
@@ -42,28 +42,22 @@ export const HomePage = withServerSideProps(
       action: { loadProductsAndCategories, loadNextProducts },
     } = useProductStoreContext();
 
-    // 무한 스크롤 이벤트 등록
-    let scrollHandlerRegistered = false;
-
-    const registerScrollHandler = () => {
-      if (scrollHandlerRegistered) return;
-
+    // 무한 스크롤 이벤트 등록/해제 함수를 useCallback으로 메모이제이션
+    // loadNextProducts가 안정적인 참조를 보장하므로 의존성 배열에 포함
+    const registerScrollHandler = useCallback(() => {
       window.addEventListener("scroll", loadNextProducts);
-      scrollHandlerRegistered = true;
-    };
+    }, [loadNextProducts]);
 
-    const unregisterScrollHandler = () => {
-      if (!scrollHandlerRegistered) return;
+    const unregisterScrollHandler = useCallback(() => {
       window.removeEventListener("scroll", loadNextProducts);
-      scrollHandlerRegistered = false;
-    };
+    }, [loadNextProducts]);
 
     useEffect(() => {
       registerScrollHandler();
       loadProductsAndCategories();
 
       return unregisterScrollHandler;
-    }, []);
+    }, [registerScrollHandler, loadProductsAndCategories, unregisterScrollHandler]);
 
     return (
       <PageWrapper headerLeft={headerLeft}>

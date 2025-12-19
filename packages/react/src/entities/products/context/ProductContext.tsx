@@ -5,6 +5,7 @@ import { ProductStoreContext } from "../hooks";
 import { initialProductState, PRODUCT_ACTIONS, type ProductState } from "../productStore";
 import { useStore } from "@hanghae-plus/lib";
 import { useRouterContext } from "../../../router/hooks/useRouterContext";
+import { useCallback, useMemo } from "react";
 
 /**
  * ProductProvider의 props 타입
@@ -50,33 +51,36 @@ export const ProductProvider = ({ children, productStore }: ProductProviderProps
    * @returns {Promise<void>}
    * @throws {Error} API 호출 실패 시 에러 발생
    */
-  const loadProducts = async (resetList = true): Promise<void> => {
-    try {
-      productStore.dispatch({
-        type: PRODUCT_ACTIONS.SETUP,
-        payload: { loading: true, status: "pending", error: null },
-      });
+  const loadProducts = useCallback(
+    async (resetList = true): Promise<void> => {
+      try {
+        productStore.dispatch({
+          type: PRODUCT_ACTIONS.SETUP,
+          payload: { loading: true, status: "pending", error: null },
+        });
 
-      const {
-        products,
-        pagination: { total },
-      } = await getProducts(router.query);
-      const payload = { products, totalCount: total };
+        const {
+          products,
+          pagination: { total },
+        } = await getProducts(router.query);
+        const payload = { products, totalCount: total };
 
-      // 페이지 리셋이면 새로 설정, 아니면 기존에 추가
-      if (resetList) {
-        productStore.dispatch({ type: PRODUCT_ACTIONS.SET_PRODUCTS, payload });
-        return;
+        // 페이지 리셋이면 새로 설정, 아니면 기존에 추가
+        if (resetList) {
+          productStore.dispatch({ type: PRODUCT_ACTIONS.SET_PRODUCTS, payload });
+          return;
+        }
+        productStore.dispatch({ type: PRODUCT_ACTIONS.ADD_PRODUCTS, payload });
+      } catch (error) {
+        productStore.dispatch({
+          type: PRODUCT_ACTIONS.SET_ERROR,
+          payload: createErrorMessage(error),
+        });
+        throw error;
       }
-      productStore.dispatch({ type: PRODUCT_ACTIONS.ADD_PRODUCTS, payload });
-    } catch (error) {
-      productStore.dispatch({
-        type: PRODUCT_ACTIONS.SET_ERROR,
-        payload: createErrorMessage(error),
-      });
-      throw error;
-    }
-  };
+    },
+    [productStore, router],
+  );
 
   /**
    * 상품 목록과 카테고리를 동시에 로드하는 함수
@@ -85,7 +89,7 @@ export const ProductProvider = ({ children, productStore }: ProductProviderProps
    * @returns {Promise<void>}
    * @throws {Error} API 호출 실패 시 에러 발생
    */
-  const loadProductsAndCategories = async (): Promise<void> => {
+  const loadProductsAndCategories = useCallback(async (): Promise<void> => {
     try {
       const [
         {
@@ -113,7 +117,7 @@ export const ProductProvider = ({ children, productStore }: ProductProviderProps
       });
       throw error;
     }
-  };
+  }, [productStore, router]);
 
   /**
    * 다음 페이지 상품을 로드하는 함수 (무한 스크롤용)
@@ -121,7 +125,7 @@ export const ProductProvider = ({ children, productStore }: ProductProviderProps
    *
    * @returns {Promise<void>}
    */
-  const loadMoreProducts = async (): Promise<void> => {
+  const loadMoreProducts = useCallback(async (): Promise<void> => {
     const state = productStore.getState();
     const hasMore = state.products.length < state.totalCount;
 
@@ -133,97 +137,55 @@ export const ProductProvider = ({ children, productStore }: ProductProviderProps
     // 다음 페이지로 이동하여 상품 추가 로드
     router.query = { ...router.query, current: (Number(router.query?.current || 1) + 1).toString() };
     await loadProducts(false);
-  };
+  }, [productStore, router, loadProducts]);
 
   /**
    * 검색어를 설정하고 상품 목록을 다시 로드하는 함수
    *
    * @param {string} search - 검색어
    */
-  const searchProducts = (search: string): void => {
-    router.query = { ...router.query, search, current: "1" };
-  };
+  const searchProducts = useCallback(
+    (search: string): void => {
+      router.query = { ...router.query, search, current: "1" };
+    },
+    [router],
+  );
 
   /**
    * 카테고리를 설정하고 상품 목록을 다시 로드하는 함수
    *
    * @param {StringRecord} categoryData - 카테고리 데이터 (category1, category2 등)
    */
-  const setCategory = (categoryData: StringRecord): void => {
-    router.query = { ...router.query, ...categoryData, current: "1" };
-  };
+  const setCategory = useCallback(
+    (categoryData: StringRecord): void => {
+      router.query = { ...router.query, ...categoryData, current: "1" };
+    },
+    [router],
+  );
 
   /**
    * 정렬 방식을 설정하고 상품 목록을 다시 로드하는 함수
    *
    * @param {string} sort - 정렬 방식 (price_asc, price_desc, name_asc, name_desc)
    */
-  const setSort = (sort: string): void => {
-    router.query = { ...router.query, sort, current: "1" };
-  };
+  const setSort = useCallback(
+    (sort: string): void => {
+      router.query = { ...router.query, sort, current: "1" };
+    },
+    [router],
+  );
 
   /**
    * 페이지당 상품 개수를 설정하고 상품 목록을 다시 로드하는 함수
    *
    * @param {number} limit - 페이지당 상품 개수
    */
-  const setLimit = (limit: number): void => {
-    router.query = { ...router.query, limit: limit.toString(), current: "1" };
-  };
-
-  /**
-   * 상품 상세 페이지를 위한 데이터를 로드하는 함수
-   * 현재 상품과 관련 상품을 함께 로드함
-   *
-   * @param {string} productId - 상품 ID
-   * @returns {Promise<void>}
-   * @throws {Error} API 호출 실패 시 에러 발생
-   */
-  const loadProductDetailForPage = async (productId: string): Promise<void> => {
-    try {
-      const currentProduct = productStore.getState().currentProduct;
-
-      // 이미 같은 상품이 로드되어 있으면 관련 상품만 로드
-      if (productId === currentProduct?.productId) {
-        if (currentProduct.category2) {
-          await loadRelatedProducts(currentProduct.category2, productId);
-        }
-        return;
-      }
-
-      // 다른 상품을 로드하기 전에 상태 초기화
-      productStore.dispatch({
-        type: PRODUCT_ACTIONS.SETUP,
-        payload: {
-          ...initialProductState,
-          currentProduct: null,
-          loading: true,
-          status: "pending",
-        },
-      });
-
-      // 상품 상세 정보 로드
-      const product = await getProduct(productId);
-
-      // 현재 상품 설정
-      productStore.dispatch({
-        type: PRODUCT_ACTIONS.SET_CURRENT_PRODUCT,
-        payload: product,
-      });
-
-      // 관련 상품 로드 (같은 category2 기준)
-      if (product.category2) {
-        await loadRelatedProducts(product.category2, productId);
-      }
-    } catch (error) {
-      console.error("상품 상세 페이지 로드 실패:", error);
-      productStore.dispatch({
-        type: PRODUCT_ACTIONS.SET_ERROR,
-        payload: createErrorMessage(error),
-      });
-      throw error;
-    }
-  };
+  const setLimit = useCallback(
+    (limit: number): void => {
+      router.query = { ...router.query, limit: limit.toString(), current: "1" };
+    },
+    [router],
+  );
 
   /**
    * 관련 상품을 로드하는 함수
@@ -233,32 +195,92 @@ export const ProductProvider = ({ children, productStore }: ProductProviderProps
    * @param {string} excludeProductId - 제외할 상품 ID (현재 상품)
    * @returns {Promise<void>}
    */
-  const loadRelatedProducts = async (category2: string, excludeProductId: string): Promise<void> => {
-    try {
-      const params = {
-        category2,
-        limit: String(20), // 관련 상품 20개
-        page: String(1),
-      };
+  const loadRelatedProducts = useCallback(
+    async (category2: string, excludeProductId: string): Promise<void> => {
+      try {
+        const params = {
+          category2,
+          limit: String(20), // 관련 상품 20개
+          page: String(1),
+        };
 
-      const response = await getProducts(params);
+        const response = await getProducts(params);
 
-      // 현재 상품 제외
-      const relatedProducts = response.products.filter((product) => product.productId !== excludeProductId);
+        // 현재 상품 제외
+        const relatedProducts = response.products.filter((product) => product.productId !== excludeProductId);
 
-      productStore.dispatch({
-        type: PRODUCT_ACTIONS.SET_RELATED_PRODUCTS,
-        payload: relatedProducts,
-      });
-    } catch (error) {
-      console.error("관련 상품 로드 실패:", error);
-      // 관련 상품 로드 실패는 전체 페이지에 영향주지 않도록 조용히 처리
-      productStore.dispatch({
-        type: PRODUCT_ACTIONS.SET_RELATED_PRODUCTS,
-        payload: [],
-      });
-    }
-  };
+        productStore.dispatch({
+          type: PRODUCT_ACTIONS.SET_RELATED_PRODUCTS,
+          payload: relatedProducts,
+        });
+      } catch (error) {
+        console.error("관련 상품 로드 실패:", error);
+        // 관련 상품 로드 실패는 전체 페이지에 영향주지 않도록 조용히 처리
+        productStore.dispatch({
+          type: PRODUCT_ACTIONS.SET_RELATED_PRODUCTS,
+          payload: [],
+        });
+      }
+    },
+    [productStore],
+  );
+
+  /**
+   * 상품 상세 페이지를 위한 데이터를 로드하는 함수
+   * 현재 상품과 관련 상품을 함께 로드함
+   *
+   * @param {string} productId - 상품 ID
+   * @returns {Promise<void>}
+   * @throws {Error} API 호출 실패 시 에러 발생
+   */
+  const loadProductDetailForPage = useCallback(
+    async (productId: string): Promise<void> => {
+      try {
+        const currentProduct = productStore.getState().currentProduct;
+
+        // 이미 같은 상품이 로드되어 있으면 관련 상품만 로드
+        if (productId === currentProduct?.productId) {
+          if (currentProduct.category2) {
+            await loadRelatedProducts(currentProduct.category2, productId);
+          }
+          return;
+        }
+
+        // 다른 상품을 로드하기 전에 상태 초기화
+        productStore.dispatch({
+          type: PRODUCT_ACTIONS.SETUP,
+          payload: {
+            ...initialProductState,
+            currentProduct: null,
+            loading: true,
+            status: "pending",
+          },
+        });
+
+        // 상품 상세 정보 로드
+        const product = await getProduct(productId);
+
+        // 현재 상품 설정
+        productStore.dispatch({
+          type: PRODUCT_ACTIONS.SET_CURRENT_PRODUCT,
+          payload: product,
+        });
+
+        // 관련 상품 로드 (같은 category2 기준)
+        if (product.category2) {
+          await loadRelatedProducts(product.category2, productId);
+        }
+      } catch (error) {
+        console.error("상품 상세 페이지 로드 실패:", error);
+        productStore.dispatch({
+          type: PRODUCT_ACTIONS.SET_ERROR,
+          payload: createErrorMessage(error),
+        });
+        throw error;
+      }
+    },
+    [productStore, loadRelatedProducts],
+  );
 
   /**
    * 무한 스크롤을 위한 다음 상품 로드 함수
@@ -267,7 +289,7 @@ export const ProductProvider = ({ children, productStore }: ProductProviderProps
    *
    * @returns {Promise<void>}
    */
-  const loadNextProducts = async (): Promise<void> => {
+  const loadNextProducts = useCallback(async (): Promise<void> => {
     // 현재 라우트가 홈이 아니면 무한 스크롤 비활성화
     if (router.route?.path !== "/") {
       return;
@@ -289,27 +311,44 @@ export const ProductProvider = ({ children, productStore }: ProductProviderProps
         console.error("무한 스크롤 로드 실패:", error);
       }
     }
-  };
+  }, [productStore, router, loadMoreProducts]);
 
-  return (
-    <ProductStoreContext.Provider
-      value={{
-        store: productStore,
-        state: productStoreState,
-        action: {
-          loadProducts,
-          loadProductsAndCategories,
-          searchProducts,
-          setCategory,
-          setSort,
-          setLimit,
-          loadProductDetailForPage,
-          loadRelatedProducts,
-          loadNextProducts,
-        },
-      }}
-    >
-      {children}
-    </ProductStoreContext.Provider>
+  // action 객체를 useMemo로 메모이제이션하여 안정적인 참조 보장
+  // ESLint가 useEffect 의존성 배열에서 이 함수들을 안정적으로 인식하도록 함
+  const action = useMemo(
+    () => ({
+      loadProducts,
+      loadProductsAndCategories,
+      searchProducts,
+      setCategory,
+      setSort,
+      setLimit,
+      loadProductDetailForPage,
+      loadRelatedProducts,
+      loadNextProducts,
+    }),
+    [
+      loadProducts,
+      loadProductsAndCategories,
+      searchProducts,
+      setCategory,
+      setSort,
+      setLimit,
+      loadProductDetailForPage,
+      loadRelatedProducts,
+      loadNextProducts,
+    ],
   );
+
+  // Context value 객체를 메모이제이션하여 불필요한 리렌더링 방지
+  const contextValue = useMemo(
+    () => ({
+      store: productStore,
+      state: productStoreState,
+      action,
+    }),
+    [productStore, productStoreState, action],
+  );
+
+  return <ProductStoreContext.Provider value={contextValue}>{children}</ProductStoreContext.Provider>;
 };

@@ -1,6 +1,6 @@
 import type { RouterInstance } from "../Router";
 import type { AnyFunction } from "../types";
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, useRef } from "react";
 import { useShallowSelector } from "./useShallowSelector";
 
 /**
@@ -27,10 +27,19 @@ export const useRouter = <T extends RouterInstance<AnyFunction>, S>(router: T, s
   // 얕은 비교를 통해 불필요한 리렌더링 방지
   const shallowSelector = useShallowSelector(selector);
 
+  // getServerSnapshot을 useRef로 캐싱하여 무한 루프 방지
+  // React 19에서는 getServerSnapshot의 결과를 캐시해야 함
+  // shallowSelector는 useRef를 사용하므로 안정적인 함수
+  // getServerSnapshot은 항상 최신 라우터 상태를 반환하되, 함수 자체는 캐시
+  const getServerSnapshotRef = useRef<() => S>();
+  if (!getServerSnapshotRef.current) {
+    getServerSnapshotRef.current = () => shallowSelector(router);
+  }
+
   // useSyncExternalStore를 사용하여 외부 스토어(라우터) 구독
   return useSyncExternalStore(
     router.subscribe, // 라우터 상태 변경 구독
     () => shallowSelector(router), // 클라이언트: 현재 라우터 상태 반환
-    () => shallowSelector(router), // 서버: 동일하게 처리
+    getServerSnapshotRef.current, // 서버: 캐시된 함수 사용 (항상 최신 상태 반환)
   );
 };

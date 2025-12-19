@@ -94,7 +94,7 @@ export const withLifecycle = ({ onMount, onUnmount, watches, ssr, metadata } = {
     return serverHandler;
   }
 
-  return (...args) => {
+  const clientHandler = (...args) => {
     const wasNewPage = pageState.current !== page;
 
     // 이전 페이지 언마운트
@@ -125,4 +125,11 @@ export const withLifecycle = ({ onMount, onUnmount, watches, ssr, metadata } = {
     // 페이지 함수 실행
     return page(...args);
   };
+
+  // 클라이언트 사이드에서도 metadata를 접근할 수 있도록 설정
+  if (metadata) {
+    clientHandler.metadata = metadata;
+  }
+
+  return clientHandler;
 };

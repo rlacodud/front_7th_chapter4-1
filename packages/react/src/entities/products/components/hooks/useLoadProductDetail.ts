@@ -9,5 +9,5 @@ export const useLoadProductDetail = () => {
   const productId = useRouterParams((params) => params.id);
   useEffect(() => {
     loadProductDetailForPage(productId ?? "");
-  }, [productId]);
+  }, [productId, loadProductDetailForPage]);
 };
