@@ -16,8 +16,12 @@ import { createViteServer, generatePage } from "./src/server/utils/ssrUtils.ts";
  * 정적 페이지 생성 함수
  */
 const generateStaticPages = async () => {
+  // SSG 빌드 시 base 경로 설정 (vite.config.ts와 동일)
+  const base = process.env.NODE_ENV === "production" ? "/front_7th_chapter4-1/react/" : "/";
+
   // Vite 서버 생성 (SSR 모듈 로드를 위해 필요)
-  const viteServer = await createViteServer();
+  // base 경로를 전달하여 SSG 빌드 시 올바른 경로 사용
+  const viteServer = await createViteServer({ base });
 
   try {
     // MSW 서버 시작 (SSR 렌더링 시 API 모킹 필요)

@@ -4,10 +4,21 @@ export const isClient = typeof window !== "undefined";
 export const isServer = !isClient;
 
 // 애플리케이션 기본 설정
-// Vite의 import.meta.env.BASE_URL을 직접 사용 (vite.config.ts의 base 설정과 항상 일치)
+// vite.config.ts의 base 설정과 동일한 로직 사용
+// SSR/SSG와 클라이언트 모두에서 일관된 경로를 보장
 // BASE_URL은 항상 /로 시작하고 /로 끝남 (예: "/front_7th_chapter4-1/react/" 또는 "/")
-export const BASE_URL =
-  typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/";
+export const BASE_URL = (() => {
+  // 서버 사이드: process.env.NODE_ENV 확인
+  if (typeof process !== "undefined" && process.env?.NODE_ENV === "production") {
+    return "/front_7th_chapter4-1/react/";
+  }
+  // 클라이언트 사이드: Vite의 import.meta.env.BASE_URL 사용 (빌드 시 인라인됨)
+  if (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL) {
+    return import.meta.env.BASE_URL;
+  }
+  // 기본값: 개발 환경 또는 fallback
+  return "/";
+})();
 
 // 빌드 디렉토리 경로 상수
 /**

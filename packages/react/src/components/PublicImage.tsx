@@ -1,14 +1,15 @@
+import { BASE_URL } from "../constants";
 import { type ComponentProps, memo } from "react";
 
 /**
  * PublicImage 컴포넌트
- * Vite의 import.meta.env.BASE_URL을 사용하여 정적 리소스 경로를 올바르게 조합함
- * Vite는 public 폴더의 파일에 base 경로를 자동으로 적용하므로, 이를 활용함
+ * BASE_URL을 사용하여 정적 리소스 경로를 올바르게 조합함
+ * SSR/SSG와 클라이언트 모두에서 일관된 경로를 보장하기 위해 constants.ts의 BASE_URL 사용
  */
 export const PublicImage = memo(({ src, ...props }: ComponentProps<"img">) => {
-  // Vite의 BASE_URL 사용 (vite.config.ts의 base 설정과 동일)
-  // import.meta.env.BASE_URL은 항상 /로 시작하고 /로 끝남 (예: "/front_7th_chapter4-1/react/")
-  const baseUrl = typeof import.meta !== "undefined" ? import.meta.env?.BASE_URL || "/" : "/";
+  // constants.ts의 BASE_URL 사용 (SSR/SSG와 클라이언트 모두에서 일관성 보장)
+  // BASE_URL은 항상 /로 시작하고 /로 끝남 (예: "/front_7th_chapter4-1/react/" 또는 "/")
+  const baseUrl = BASE_URL;
 
   // src가 이미 절대 경로로 시작하는 경우 (/로 시작)
   // baseUrl과 조합할 때 중복 슬래시 방지
