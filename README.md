@@ -291,7 +291,9 @@ mswServer.listen({
 같은 결과를 만들어내지만, 구현 과정에서 개발자가 직접 책임져야 하는 범위는 완전히 달랐다.
 
 **(4-1) SSR 구현 방식의 차이**
+
 **1️⃣ Vanilla**
+
 Vanilla 환경에서는 SSR 과정이 매우 직관적이면서도,
  그만큼 모든 책임이 명확히 드러났다.
 ```js
@@ -307,6 +309,7 @@ return {
 => HTML 생성, 데이터 주입, 상태 전달을 모두 개발자가 직접 관리
 
 **2️⃣ React**
+
 React SSR에서는 **renderToString**을 통해 컴포넌트 트리 전체가 그대로 서버에서 실행된다.
 ```js
 htmlString = renderToString(
@@ -323,7 +326,9 @@ htmlString = renderToString(
 => SSR 흐름 자체가 컴포넌트 구조 안으로 자연스럽게 녹아 있음
 
 **(4-2) Hydration 방식의 차이**
+
 **1️⃣ Vanilla**
+
 Vanilla에서는 hydration 역시 전적으로 수동이다.
 ```js
 productStore.dispatch({
@@ -340,6 +345,7 @@ productStore.dispatch({
 => hydration은 “자동 과정”이 아니라 명시적으로 설계해야 하는 단계라는 걸 체감했다.
 
 **2️⃣ React**
+
 React에서는 hydration 과정이 상대적으로 단순해진다.
 ```js
 const initData = window.__INITIAL_DATA__;
@@ -353,6 +359,7 @@ const initData = window.__INITIAL_DATA__;
 => React가 hydration의 복잡성을 프레임워크 차원에서 흡수하고 있다는 걸 실감했다.
 
 **(4-3) 라우팅 처리 방식의 차이**
+
 **1️⃣ Vanilla**
 ```js
 // Vanilla 라우팅
@@ -378,6 +385,7 @@ return PageComponent ? <PageComponent /> : null;
 => 라우팅 또한 선언적인 구조로 추상화됨
 
 **[깨달은 점]**
+
 같은 SSR/SSG라도
 Vanilla에서는 **SSR이 무엇인지**를 몸으로 이해하게 되었고,
 React에서는 **왜 이런 추상화가 필요한지**를 이해하게 되었다.
