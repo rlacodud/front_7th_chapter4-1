@@ -430,5 +430,7 @@ SSR/SSG 구현과 관련된 구체적인 피드백을 요청해주세요.
 ---
 
 자세한 구현 과정과 회고는 아래 블로그에 정리했습니다! 😊
+
 [9주차_성능최적화: SSR(Server Side Rendering), SSG(Static Site Generation), Infra](https://chaeng03.tistory.com/entry/%ED%95%AD%ED%95%B499-9%EC%A3%BC%EC%B0%A8%EC%84%B1%EB%8A%A5%EC%B5%9C%EC%A0%81%ED%99%94-SSRServer-Side-Rendering-SSGStatic-Site-Generation-Infra)
+
 [WIL 9주차_Chapter 4-1. 성능최적화: SSR, SSG, Infra](https://chaeng03.tistory.com/entry/%ED%95%AD%ED%95%B499-WIL-9%EC%A3%BC%EC%B0%A8Chapter-4-1-%EC%84%B1%EB%8A%A5%EC%B5%9C%EC%A0%81%ED%99%94-SSR-SSG-Infra)
